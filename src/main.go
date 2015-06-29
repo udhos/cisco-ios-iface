@@ -14,10 +14,11 @@ type iface struct {
 	addr string
 	bw   string
 	desc string
+	shut string
 }
 
 func (i *iface) show() {
-	fmt.Printf("%25s,%15s,%15s,%10s,\"%s\"\n", i.name, i.vrf, i.addr, i.bw, i.desc)
+	fmt.Printf("%25s,%15s,%15s,%10s,%8s,\"%s\"\n", i.name, i.vrf, i.addr, i.bw, i.shut, i.desc)
 }
 
 type scanner struct {
@@ -101,6 +102,17 @@ func parseLine(ctx *scanner, line string) {
 		}
 
 		ctx.currIface.bw = bw
+
+		return
+	}
+
+	if strings.HasPrefix(line, " shutdown") {
+
+		if ctx.currIface.shut != "" {
+			fmt.Printf("parseLine: line=%d shutdown redefinition: [%s]\n", ctx.lineCount, line)
+		}
+
+		ctx.currIface.shut = "shutdown"
 
 		return
 	}
