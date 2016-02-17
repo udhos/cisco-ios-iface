@@ -22,9 +22,12 @@ func (i *iface) show() {
 }
 
 type scanner struct {
-	lineCount int
-	table     map[string]*iface
-	currIface *iface
+	lineCount   int
+	table       map[string]*iface
+	currIface   *iface
+	multilink   int
+	loopback    int
+	portChannel int
 }
 
 func parseLine(ctx *scanner, rawLine string) {
@@ -55,6 +58,16 @@ func parseLine(ctx *scanner, rawLine string) {
 		}
 
 		ctx.currIface = i
+
+		if strings.HasPrefix(name, "Multi") {
+			ctx.multilink++
+		}
+		if strings.HasPrefix(name, "Loop") {
+			ctx.loopback++
+		}
+		if strings.HasPrefix(name, "Port") {
+			ctx.portChannel++
+		}
 
 		return
 	}
@@ -142,7 +155,6 @@ func scan() (map[string]*iface, error) {
 	input := os.Stdin
 	reader := bufio.NewReader(input)
 	for {
-		ctx.lineCount++
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
 			break
@@ -150,10 +162,12 @@ func scan() (map[string]*iface, error) {
 		if err != nil {
 			return nil, fmt.Errorf("scan: error reading lines: %v\n", err)
 		}
+		ctx.lineCount++
 		parseLine(&ctx, line)
 	}
 
-	fmt.Printf("scan: found %d lines\n", ctx.lineCount)
+	fmt.Printf("scan: %d lines, %d interfaces\n", ctx.lineCount, len(ctx.table))
+	fmt.Printf("scan: %d multilink, %d loopback, %d port-channel\n", ctx.multilink, ctx.loopback, ctx.portChannel)
 
 	return ctx.table, nil
 }
