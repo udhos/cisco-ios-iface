@@ -27,7 +27,14 @@ type scanner struct {
 	currIface *iface
 }
 
-func parseLine(ctx *scanner, line string) {
+func parseLine(ctx *scanner, rawLine string) {
+
+	line := strings.TrimRight(rawLine, "\r\n")
+
+	if line == "" {
+		return
+	}
+
 	if strings.HasPrefix(line, "interface ") {
 
 		// get interface name
@@ -56,6 +63,11 @@ func parseLine(ctx *scanner, line string) {
 		return
 	}
 
+	if line[0] == '!' {
+		ctx.currIface = nil
+		return
+	}
+
 	if strings.HasPrefix(line, " ip vrf forwarding ") {
 		vrf := strings.TrimSpace(line[19:])
 
@@ -69,6 +81,11 @@ func parseLine(ctx *scanner, line string) {
 	}
 
 	if strings.HasPrefix(line, " ip address ") {
+
+		if strings.HasSuffix(line, "secondary") {
+			return
+		}
+
 		tail := line[12:]
 		fields := strings.Fields(tail)
 		addr := fields[0]
